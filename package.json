@@ -1,0 +1,29 @@
+{
+  "name": "notational-momentum",
+  "version": "0.0.1",
+  "description": "a cross-browser notetaking tool inspired by notational velocity notational.net",
+  "main": "index.js",
+  "dependencies": {
+    "blessed": "^0.1.61"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/elsehow/notational-momentum"
+  },
+  "keywords": [
+    "notetaking",
+    "terminal",
+    "ui",
+    "blessed"
+  ],
+  "author": "elsehow",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/elsehow/notational-momentum/issues"
+  },
+  "homepage": "https://github.com/elsehow/notational-momentum"
+}
