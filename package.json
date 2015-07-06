@@ -7,11 +7,13 @@
     "blessed": "^0.1.61",
     "freezer-js": "^0.5.2",
     "kefir": "^2.7.0",
-    "kefir-bus": "^1.0.3"
+    "kefir-bus": "^1.0.3",
+    "lodash": "^3.10.0"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",

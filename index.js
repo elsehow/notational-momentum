@@ -13,8 +13,8 @@ dispatcher = new KefirBus()
 
 // NotesStore returns a stream of application states
 stateStream = NotesStore(dispatcher, conf.dir)
-NotesExplorer(stateStream)
-// actionStream = NotesExplorer(stateStream)
+// NotesExplorer(stateStream)
+NotesExplorer(stateStream, dispatcher)
 // dispatcher.merge(actionStream)
 
 
