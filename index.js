@@ -6,20 +6,14 @@ var Kefir = require('kefir'),
 // var NotesStore = require ('./src/NotesExplorer.js')
 // TODO: read from a conf file
 conf = {
-	dir: "/home/ffff/Notes/"
+	// dir: "/home/ffff/Notes/"
+	dir: "/Users/ffff/Google Drive/elysian fields III"
 }
 
 dispatcher = new KefirBus()
-
 // NotesStore returns a stream of application states
+// It updates the state based on messages in dispatcher
 stateStream = NotesStore(dispatcher, conf.dir)
-// NotesExplorer(stateStream)
+// NotesExplorer draws the state ot he DOM
+// , and pushes messages to dispatcher
 NotesExplorer(stateStream, dispatcher)
-// dispatcher.merge(actionStream)
-
-
-// DEBUG
-// dispatcher.log('dispatcher')
-// stateStream.log('stateStream')
-
-

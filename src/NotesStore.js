@@ -3,7 +3,10 @@ var Kefir = require('kefir'),
 	fs = require('fs'),
 	_ = require('lodash'),
 	path = require('path'),
-	spawnSubl = require('./spawnSubl')
+	spawnSubl = require('./helpers/spawnSubl.js'),
+	search  = require('./helpers/search.js'),
+	keywords = require('./helpers/keywords.js'),
+	removeSystemFiles = require('./helpers/removeSystemFiles.js')
 
 // Filter dispatch (obj) by type (str) -> (Dispatch)
 dispatchIsType = function (type, dispatch) {
@@ -14,14 +17,6 @@ dispatchIsType = function (type, dispatch) {
 wire = function (dispatcher, dispatchType) {
 	return dispatcher
 		.filter(function (d) { return dispatchIsType(dispatchType, d)})
-}
-
-// Remove notes that start with '.' [str..] -> [str...]
-removeSystemFiles = function (filenames) {
-	// remove all hidden files (files that start with '.')
-	return _.reject(filenames, function (f) {
-		return _.first(f) === '.'
-	})
 }
 
 // -> [str..]
@@ -43,42 +38,6 @@ removeLastChar = function (val) {
 
 // search fns
 
-// str, str2, -> str/null
-keywords = function (str) {
-  if (_.isString(str) && str.length > 0) {
-	var tokens = str.split(' ')
-		return _.reject(tokens, function (str) {
-  			return str.length == 0
-  		})
-  	}
-}
-
-includes = function (str1, str2) { 
-  // ignore case
-  if (str1.toLowerCase().indexOf(str2.toLowerCase()) > -1) return str1
-}
-
-// [str..] list, str searchStr -> [str..]
-filterFor = function (list, searchStr)  {
-  return _.filter(list, function(str) {
-    return includes(str, searchStr)
-  })
-}
-
-// [str...] list, [str...] searchTerms => [str...] filteredList
-search = function (acc, list, searchTerms) {
-
-  if (searchTerms.length == 0) {
-    return acc
-  }
-
-  else return search(
-    // union of keyword results
-    _.union(acc, filterFor(list, _.first(searchTerms)))
-    , list
-    , _.rest(searchTerms))
-}
-
 selectionByIndex = function (selectionState, i, visibleNotes) {
 	return {
 		selectionIndex: i,
@@ -93,21 +52,11 @@ selectionByValue = function (selectionState, val, visibleNotes) {
 	}
 }
 
-// algo for adjusting selected item on search
+// TODO - algo for adjusting selected item on search
 //	if your selected index is > 0 
 //    and your selected object is still in the list, 
 //      return your object
 //	otherwise, return the first item 
-selectSensibleItem = function (selection, notes) {
-	if (selection.selectionIndex > 0) {
-		if (_.includes(notes, selection.selectionValue)) {
-			return selectionByValue(selection, selection.selectionValue, notes)
-		}
-	}
-	else {
-		return selectionByIndex(selection, 0, notes)
-	}
-}
 
 setup = function (dispatcher, dir) {
 
@@ -128,8 +77,12 @@ setup = function (dispatcher, dir) {
 	})
 
 	// Wire the dispatcher to side-effecty functions that update the state
+	// fn gets passed the dispatch, and store.get() - the current state
+	// returns nothing
 	var on = function (dispatcher, dispatchType, fn) {
-		return wire(dispatcher, dispatchType).onValue(fn)
+		wire(dispatcher, dispatchType).onValue(function (d) { 
+			fn(d, store.get()) 
+		})
 	}
 
 	var resetSelection = function (state) {
@@ -140,14 +93,13 @@ setup = function (dispatcher, dir) {
 	// TODO - then you explicitly merge actionStream in index?
 
 	// {type:'getNotesList'} -> fetch the notes in our directory 
-	on(dispatcher, 'getNotesList', function (dispatch) {
+	on(dispatcher, 'getNotesList', function (dispatch, state) {
 		// TODO: through2 pipe list of files ....
 		fs.readdir(dir, function (err, notes) {
 			if (err) console.log('ERROR FETCHING NOTES!', err)
 			// filtering notes
 			// update store
 			else {
-				var state = reset(store.get()
 				var allNotes = sort(removeSystemFiles(notes))
 				var transaction = state.notesState.transact()
 				transaction.allNotes = allNotes
@@ -160,42 +112,41 @@ setup = function (dispatcher, dir) {
 	})
 
 	// {type:'addToTextbox', val: 'j'} -> set textboxValue
-	on(dispatcher, 'addToTextbox', function (dispatch) {
-		var state = store.get()
+	on(dispatcher, 'addToTextbox', function (dispatch, state) {
 		var updatedVal = addCharToString(dispatch.ev, state.searchState.textboxValue)
 		state.searchState.set('textboxValue', updatedVal)
 	})
 
 	// {type:'clearTextbox'} -> clear textbox
-	on(dispatcher, 'clearTextbox', function() {
-		var state = store.get()
+	on(dispatcher, 'clearTextbox', function (_, state) {
 		state.searchState.set('textboxValue', '')
 		// reset selection when textbox is cleared
 		state.selection = resetSelection(state)
 	})
 
 	// {type:'backspaceTextbox'} -> remove last char from textbox
-	on(dispatcher, 'backspaceTextbox', function () {
-		var state = store.get()
+	on(dispatcher, 'backspaceTextbox', function (_, state) {
 		var backspacedVal = removeLastChar(state.searchState.textboxValue) 
 		state.searchState.set('textboxValue', backspacedVal)
 	})
 
-	on(dispatcher, 'scrollUp', function () {
-		var state = store.get()
-		var i = state.selection.selectionIndex
-		if (i > 0) {
-			state.set('selection',selectionByIndex(state.selection, i-1, state.notesState.displayedNotes))
+	// dir is 1 or -1
+	var scroll = function (state, comparison, dir) {
+		return function () {
+			if (comparison) state.set('selection', 
+				selectionByIndex(state.selection, state.selection.selectionIndex+dir, state.notesState.displayedNotes))
 		}
+	}
+
+	on(dispatcher, 'scrollUp', function (_, state) {
+		var i = state.selection.selectionIndex
+		scroll(state, i > 0, -1)()
 	})
 
-	on(dispatcher, 'scrollDown', function () {
-		var state = store.get()
+	on(dispatcher, 'scrollDown', function (_, state) {
 		var i = state.selection.selectionIndex
 		var displayedNotes = state.notesState.displayedNotes
-		if (i < displayedNotes.length) {
-			state.set('selection',selectionByIndex(state.selection, i+1, displayedNotes))
-		}
+		scroll(state, i < displayedNotes.length, 1)()
 	})
 
 
@@ -204,7 +155,6 @@ setup = function (dispatcher, dir) {
 		var file = path.join(dir, selectedNote)
 		spawnSubl(file)
 	})
-
 
 	// Make a stream of state updates
 	stateStream = Kefir.fromEvents(store, 'update')
@@ -218,10 +168,10 @@ setup = function (dispatcher, dir) {
 			var searchResults = search([], state.notesState.allNotes, kwords)
 			state.notesState.set('displayedNotes', searchResults)
 			// adjust selection
-			state.selection = selectSensibleItem(state.selection, state.notesState.displayedNotes)
+			// state.selection = selectSensibleItem(state.selection, state.notesState.displayedNotes)
 		} else {
 			state.notesState.set('displayedNotes', state.notesState.allNotes)
-			state.selection =resetSelection(state) 
+			// state.set('selection', resetSelection(store.get()))
 		}
 	})
 

@@ -116,7 +116,8 @@ render = function (state) {
 
 setup = function (stateStream, dispatcher) {
 
-  actions = makeActions(dispatcher)
+  // get a  of functions that pushes actions to actionStream
+  var actions = makeActions(dispatcher)
 
   // append to screen - order seems to matter
   screen.append(list)
