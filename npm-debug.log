@@ -1,27 +1,21 @@
 0 info it worked if it ends with ok
-1 verbose cli [ '/usr/bin/node', '/usr/bin/npm', 'start' ]
+1 verbose cli [ '/usr/bin/node', '/usr/bin/npm', 'cache', 'clean' ]
 2 info using npm@1.4.28
 3 info using node@v0.10.37
 4 verbose node symlink /usr/bin/node
-5 verbose run-script [ 'prestart', 'start', 'poststart' ]
-6 info prestart notational-momentum@0.0.1
-7 info start notational-momentum@0.0.1
-8 verbose unsafe-perm in lifecycle true
-9 info notational-momentum@0.0.1 Failed to exec start script
-10 error notational-momentum@0.0.1 start: `node index.js`
-10 error Exit status 1
-11 error Failed at the notational-momentum@0.0.1 start script.
-11 error This is most likely a problem with the notational-momentum package,
-11 error not with npm itself.
-11 error Tell the author that this fails on your system:
-11 error     node index.js
-11 error You can get their info via:
-11 error     npm owner ls notational-momentum
-11 error There is likely additional logging output above.
-12 error System Linux 3.8.11
-13 error command "/usr/bin/node" "/usr/bin/npm" "start"
-14 error cwd /home/ffff/Projects/notational-momentum
-15 error node -v v0.10.37
-16 error npm -v 1.4.28
-17 error code ELIFECYCLE
-18 verbose exit [ 1, true ]
+5 error Error: EACCES, unlink '/home/ffff/.npm/ascii-codes/1.0.0'
+5 error  { [Error: EACCES, unlink '/home/ffff/.npm/ascii-codes/1.0.0']
+5 error   errno: 3,
+5 error   code: 'EACCES',
+5 error   path: '/home/ffff/.npm/ascii-codes/1.0.0' }
+6 error Please try running this command again as root/Administrator.
+7 error System Linux 3.8.11
+8 error command "/usr/bin/node" "/usr/bin/npm" "cache" "clean"
+9 error cwd /home/ffff/Projects/notational-momentum
+10 error node -v v0.10.37
+11 error npm -v 1.4.28
+12 error path /home/ffff/.npm/ascii-codes/1.0.0
+13 error code EACCES
+14 error errno 3
+15 error stack Error: EACCES, unlink '/home/ffff/.npm/ascii-codes/1.0.0'
+16 verbose exit [ 3, true ]

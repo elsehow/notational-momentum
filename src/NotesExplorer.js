@@ -1,5 +1,9 @@
 var blessed = require('blessed'),
-  _ = require('lodash');
+  _ = require('lodash'),
+  ascii = require('ascii-codes')
+
+var ASCII_CHARS = ascii.symbolIndex
+ASCII_CHARS[0] = 'space' // hack 
 
 // register our actions here 
 var makeActions = function (bus) {
@@ -30,11 +34,22 @@ var makeActions = function (bus) {
       })
     },
 
-    // open a note
-    openNote: function (note) {
+    scrollUp: function () {
       bus.emit({
-        type: 'openNote',
-        note: note
+        type: 'scrollUp'
+      })
+    },
+
+    scrollDown: function () {
+      bus.emit({
+        type: 'scrollDown'
+      })
+    },
+
+    // open a note
+    openSelectedNote: function () {
+      bus.emit({
+        type: 'openSelectedNote',
       })
     },
 
@@ -77,53 +92,18 @@ var list = blessed.list({
   selectedBg: 'blue',
 });
 
-// str, str2, -> str/null
-keywords = function (str) {
-  if (str) return str.split(' ')
-}
-
-includes = function (str1, str2) { 
-  // ignore case
-  if (str1.toLowerCase().indexOf(str2.toLowerCase()) > -1) return str1
-}
-
-// [str..] list, str searchStr -> [str..]
-filterFor = function (list, searchStr)  {
-  return _.filter(list, function(str) {
-    return includes(str, searchStr)
-  })
-}
-
-// [str...] list, [str...] searchTerms => [str...] filteredList
-search = function (acc, list, searchTerms) {
-
-  if (!searchTerms) {
-    return list
-  }
-
-  if (searchTerms.length == 0) {
-    return acc
-  }
-
-  else return search(
-    // union of keyword results
-    _.union(acc, filterFor(list, _.first(searchTerms)))
-    , list
-    , _.rest(searchTerms))
-}
-  
 render = function (state) {
 
   // update textbox state
-  textbox.setValue(state.textboxValue)
+  textbox.setValue(state.searchState.textboxValue)
 
   // update list with new notes
   //TODO: search notes per-keywords
-  list.setItems(search([], state.notes, keywords(state.textboxValue)))
+  list.setItems(state.notesState.displayedNotes)
   // list.setItems(filterFor(state.notes, state.textboxValue))
 
   // select the first item
-  list.select(0)
+  list.select(state.selection.selectionIndex)
 
   // put the textbox in focus
   list.focus()
@@ -142,35 +122,27 @@ setup = function (stateStream, dispatcher) {
   screen.append(list)
   screen.append(textbox)
 
-  // TODO: clearer to filter keypreses
-  //screen.on('keypress', function (ev) {
-    // switch (ev) ...
+  screen.key(['escape'], actions.clearTextbox)
+  screen.key(['backspace'], actions.backspaceTextbox)
+  //scroll
+  screen.key(['C-j', 'linefeed'], actions.scrollDown)
+  screen.key(['C-k'], actions.scrollUp)
+  // we allow all ascii chars to be typed in textbox 
+  screen.key(ASCII_CHARS, function (ev) { actions.addToTextbox(ev) })
+  //open notes
+  screen.key(['enter'], actions.openSelectedNote)
+
+  // // scroll
+  // screen.on('keypress', function() {
+  //   combo = arguments['1']
+  //   if combo.full == 'C-f'
   // })
-  // or --
-  // screen.key(ALLOWED_KEYS)
-
-  screen.key(['escape'], function (_) {
-    actions.clearTextbox()
-  })
-
-  screen.key(['backspace'], function (_) {
-    actions.backspaceTextbox()
-  })
-
-  screen.on('keypress', function (ev) {
-    actions.addToTextbox(ev)
-  })
-
-  //screen.on('C-j')
-  //screen.on('C-k')
 
   // Quit on Control-C.
   screen.key(['C-c'], function(ch, key) { return process.exit(0) })
 
   // whenever we get a state from the stateStream,
-  stateStream.onValue(function (state) {
-    render(state)
-  })
+  stateStream.onValue(function (state) { render(state) })
 
     // do an initial fetch of notes
   actions.getNotesList()

@@ -4,6 +4,7 @@
   "description": "a cross-browser notetaking tool inspired by notational velocity notational.net",
   "main": "index.js",
   "dependencies": {
+    "ascii-codes": "^1.0.0",
     "blessed": "^0.1.61",
     "freezer-js": "^0.5.2",
     "kefir": "^2.7.0",
