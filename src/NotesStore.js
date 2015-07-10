@@ -20,9 +20,11 @@ wire = function (dispatcher, dispatchType) {
 }
 
 // -> [str..]
-sort = function (notes) {
-	// return _.sortBy(notes, 'filename')
-	return notes
+sort = function (notes, dir) {
+	return notes.sort(function(a, b) {
+               return fs.statSync(dir + b).mtime.getTime() - 
+                      fs.statSync(dir + a).mtime.getTime();
+	})
 }
 
 // str, char -> str
@@ -100,7 +102,7 @@ setup = function (dispatcher, dir) {
 			// filtering notes
 			// update store
 			else {
-				var allNotes = sort(removeSystemFiles(notes))
+				var allNotes = sort(removeSystemFiles(notes), dir)
 				var transaction = state.notesState.transact()
 				transaction.allNotes = allNotes
 				transaction.displayedNotes = allNotes

@@ -7,7 +7,7 @@ var Kefir = require('kefir'),
 // TODO: read from a conf file
 conf = {
 	// dir: "/home/ffff/Notes/"
-	dir: "/Users/ffff/Google Drive/elysian fields III"
+	dir: "/home/ffff/Notes/"
 }
 
 dispatcher = new KefirBus()

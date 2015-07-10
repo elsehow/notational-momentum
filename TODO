@@ -1,0 +1,5 @@
+fix scrolling 
+dont select first item while typing - enter there creates note
+esc selects nothing
+gulp watch dir
+sort by recently updated
