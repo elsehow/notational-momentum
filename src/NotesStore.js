@@ -43,7 +43,7 @@ removeLastChar = function (val) {
 selectionByIndex = function (selectionState, i, visibleNotes) {
 	return {
 		selectionIndex: i,
-		selectionValue: visibleNotes[i]
+		selectionValue: visibleNotes[i-1]
 	}
 }
 
@@ -53,12 +53,6 @@ selectionByValue = function (selectionState, val, visibleNotes) {
 		selectionValue: val
 	}
 }
-
-// TODO - algo for adjusting selected item on search
-//	if your selected index is > 0 
-//    and your selected object is still in the list, 
-//      return your object
-//	otherwise, return the first item 
 
 setup = function (dispatcher, dir) {
 
@@ -79,7 +73,6 @@ setup = function (dispatcher, dir) {
 	})
 
 	// Wire the dispatcher to side-effecty functions that update the state
-	// fn gets passed the dispatch, and store.get() - the current state
 	// returns nothing
 	var on = function (dispatcher, dispatchType, fn) {
 		wire(dispatcher, dispatchType).onValue(function (d) { 
@@ -88,28 +81,26 @@ setup = function (dispatcher, dir) {
 	}
 
 	var resetSelection = function (state) {
-		return selectionByIndex(state.selection, 0, state.notesState.displayedNotes)
+		return {
+			selectionIndex: null,
+			selectionValue: null
+		}
 	}
-
-	// TODO - make these return actionStream
-	// TODO - then you explicitly merge actionStream in index?
 
 	// {type:'getNotesList'} -> fetch the notes in our directory 
 	on(dispatcher, 'getNotesList', function (dispatch, state) {
 		// TODO: through2 pipe list of files ....
 		fs.readdir(dir, function (err, notes) {
+			// handle errors
 			if (err) console.log('ERROR FETCHING NOTES!', err)
-			// filtering notes
-			// update store
-			else {
-				var allNotes = sort(removeSystemFiles(notes), dir)
-				var transaction = state.notesState.transact()
-				transaction.allNotes = allNotes
-				transaction.displayedNotes = allNotes
-				state.notesState.run()
-				// set selection
-				state.selection = resetSelection(store.get())
-			}
+			// do stuff
+			var allNotes = sort(removeSystemFiles(notes), dir)
+			var transaction = state.notesState.transact()
+			transaction.allNotes = allNotes
+			transaction.displayedNotes = allNotes
+			state.notesState.run()
+			// set selection
+			state.selection.set(resetSelection())
 		})
 	})
 
@@ -122,8 +113,7 @@ setup = function (dispatcher, dir) {
 	// {type:'clearTextbox'} -> clear textbox
 	on(dispatcher, 'clearTextbox', function (_, state) {
 		state.searchState.set('textboxValue', '')
-		// reset selection when textbox is cleared
-		state.selection = resetSelection(state)
+		state.selection.set(resetSelection())
 	})
 
 	// {type:'backspaceTextbox'} -> remove last char from textbox
@@ -154,7 +144,12 @@ setup = function (dispatcher, dir) {
 
 	on(dispatcher, 'openSelectedNote', function () {
 		var selectedNote = store.get().selection.selectionValue  
-		var file = path.join(dir, selectedNote)
+		if (!selectedNote || selectedNote == 0) {
+			var textboxValue = store.get().searchState.textboxValue
+			var file = path.join(dir, textboxValue)	
+		} else {
+			var file = path.join(dir, selectedNote)
+		}
 		spawnSubl(file)
 	})
 
@@ -166,15 +161,16 @@ setup = function (dispatcher, dir) {
 	searchStateListener.on('update', function (_) {
 		var state = store.get()
 		var kwords = keywords(state.searchState.textboxValue)
+		// search for notes if there are keywords
 		if (kwords) {
 			var searchResults = search([], state.notesState.allNotes, kwords)
 			state.notesState.set('displayedNotes', searchResults)
-			// adjust selection
-			// state.selection = selectSensibleItem(state.selection, state.notesState.displayedNotes)
-		} else {
+		// otherwise display all notes
+		} else 
 			state.notesState.set('displayedNotes', state.notesState.allNotes)
-			// state.set('selection', resetSelection(store.get()))
-		}
+		// either way, reset the selection
+		state.selection.set(resetSelection())
+		
 	})
 
 	return stateStream

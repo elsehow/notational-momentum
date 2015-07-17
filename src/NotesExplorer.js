@@ -94,19 +94,22 @@ var list = blessed.list({
 
 render = function (state) {
 
+  var textboxVal = state.searchState.textboxValue 
+
   // update textbox state
-  textbox.setValue(state.searchState.textboxValue)
+  textbox.setValue(textboxVal)
 
   // update list with new notes
-  //TODO: search notes per-keywords
   list.setItems(state.notesState.displayedNotes)
-  // list.setItems(filterFor(state.notes, state.textboxValue))
+
+  // prepend an option to create a note
+  list.insertItem(0, textboxVal)
 
   // select the first item
-  list.select(state.selection.selectionIndex)
-
-  // put the textbox in focus
-  list.focus()
+  if (state.selection.selectionIndex)
+    list.select(state.selection.selectionIndex)
+  else
+    list.select(0)
 
   // render the screen
   screen.render()
