@@ -7,6 +7,7 @@
     "ascii-codes": "^1.0.0",
     "blessed": "^0.1.61",
     "freezer-js": "^0.5.2",
+    "gulp": "^3.9.0",
     "kefir": "^2.7.0",
     "kefir-bus": "^1.0.3",
     "lodash": "^3.10.0"

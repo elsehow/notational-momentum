@@ -10,11 +10,6 @@ var makeActions = function (bus) {
 
   return {
 
-    // read notes from directory
-    getNotesList: function () {
-      bus.emit({type:'getNotesList'})
-    },
-
     addToTextbox: function (ev) {
       bus.emit({
         type: 'addToTextbox',
@@ -103,7 +98,10 @@ render = function (state) {
   list.setItems(state.notesState.displayedNotes)
 
   // prepend an option to create a note
-  list.insertItem(0, textboxVal)
+  if (!textboxVal)
+    list.insertItem(0, '..(open dir)..')
+  else
+    list.insertItem(0, textboxVal)
 
   // select the first item
   if (state.selection.selectionIndex)
@@ -136,21 +134,12 @@ setup = function (stateStream, dispatcher) {
   //open notes
   screen.key(['enter'], actions.openSelectedNote)
 
-  // // scroll
-  // screen.on('keypress', function() {
-  //   combo = arguments['1']
-  //   if combo.full == 'C-f'
-  // })
 
   // Quit on Control-C.
   screen.key(['C-c'], function(ch, key) { return process.exit(0) })
 
   // whenever we get a state from the stateStream,
   stateStream.onValue(function (state) { render(state) })
-
-    // do an initial fetch of notes
-  actions.getNotesList()
-
 }
 
 module.exports = setup

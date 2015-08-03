@@ -1,19 +1,29 @@
 var Kefir = require('kefir'),
-	KefirBus = require('kefir-bus'),
-	NotesStore = require ('./src/NotesStore.js'),
-	NotesExplorer = require('./src/NotesExplorer.js'),
+  KefirBus = require('kefir-bus'),
+  NotesStore = require ('./src/NotesStore.js'),
+  NotesExplorer = require('./src/NotesExplorer.js'),
+  fs = require('fs'),
+  listNotes = require('./src/helpers/listNotes.js'),
+  conf = require('./config.js')
 
-// var NotesStore = require ('./src/NotesExplorer.js')
-// TODO: read from a conf file
-conf = {
-	// dir: "/home/ffff/Notes/"
-	dir: "/home/ffff/Notes/"
-}
-
-dispatcher = new KefirBus()
+var dispatcher = new KefirBus()
 // NotesStore returns a stream of application states
 // It updates the state based on messages in dispatcher
-stateStream = NotesStore(dispatcher, conf.dir)
+var stateStream = NotesStore(dispatcher, conf)
 // NotesExplorer draws the state ot he DOM
 // , and pushes messages to dispatcher
 NotesExplorer(stateStream, dispatcher)
+
+function listFiles () {
+  listNotes(conf.notesDir, function (notes) {
+    dispatcher.emit({
+      type: 'notesList',
+      notes: notes 
+    })
+  })
+}
+// watch the directory
+// run list-files task whenever there's a change in the directory
+setInterval(listFiles, 3000)
+// do an initial fetch of files
+listFiles()
