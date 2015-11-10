@@ -2,7 +2,6 @@ var Kefir = require('kefir'),
   Freezer = require('freezer-js'),
   _ = require('lodash'),
   path = require('path'),
-  spawnSubl = require('./helpers/spawnSubl.js'),
   search  = require('./helpers/search.js'),
   keywords = require('./helpers/keywords.js'),
 
@@ -64,7 +63,7 @@ var scroll = function (state, comparison, direction) {
   }
 }
 
-setup = function (dispatcher, conf) {
+setup = function (dispatcher, notesDir) {
 
   // Our immutable store
   store = new Freezer({
@@ -131,11 +130,11 @@ setup = function (dispatcher, conf) {
     var selectedNote = store.get().selection.selectionValue  
     if (!selectedNote || selectedNote == 0) {
       var textboxValue = store.get().searchState.textboxValue
-      var file = path.join(conf.notesDir, textboxValue) 
+      var file = path.join(notesDir, textboxValue) 
     } else {
-      var file = path.join(conf.notesDir, selectedNote)
+      var file = path.join(notesDir, selectedNote)
     }
-    conf.launchEditor(file)
+    //conf.launchEditor(file)
   })
 
   // Make a stream of state updates

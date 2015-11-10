@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "a cross-browser notetaking tool inspired by notational velocity notational.net",
   "main": "index.js",
+  "bin": "./index.js",
   "dependencies": {
     "ascii-codes": "^1.0.0",
     "blessed": "^0.1.61",
