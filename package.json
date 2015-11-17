@@ -1,21 +1,18 @@
 {
   "name": "notational-momentum",
-  "version": "0.0.1",
-  "description": "a cross-browser notetaking tool inspired by notational velocity notational.net",
+  "version": "0.2.9",
+  "description": "a mouseless, terminal-based notetaking tool, inspired by notational velocity",
   "main": "index.js",
   "bin": "./index.js",
   "dependencies": {
+    "and-search": "^1.0.0",
     "ascii-codes": "^1.0.0",
     "blessed": "^0.1.61",
     "freezer-js": "^0.5.2",
-    "gulp": "^3.9.0",
-    "kefir": "^2.7.0",
-    "kefir-bus": "^1.0.3",
     "lodash": "^3.10.0"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
   "repository": {

@@ -1,6 +1,10 @@
 # notational momentum
 
-ultralite clone of [notational velocity](http://notational.net/) that runs in the terminal
+a mouseless, *truly* modal notetaker that opens your notes in vim,
+
+ultralite clone of [notational velocity](http://notational.net/) 
+
+may it serve you well
 
 ## installation
 
@@ -10,9 +14,25 @@ ultralite clone of [notational velocity](http://notational.net/) that runs in th
 
     notational-momentum ~/Notes
 
-## TODO
+where ~/Notes is some directory filled with files that can be opened in vim.
 
-make enter spawn a vim thing a la [this SO post](http://stackoverflow.com/questions/9122282/how-do-i-open-a-terminal-application-from-node-js)
+## controls
+
+### CTRL+J 
+
+navigate down
+
+### CTRL+K 
+
+navigate up
+
+### type
+
+search notes
+
+### ENTER
+
+open selected note in vim
 
 ## license
 

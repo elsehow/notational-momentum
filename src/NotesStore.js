@@ -1,28 +1,13 @@
-var Kefir = require('kefir'),
-  Freezer = require('freezer-js'),
+var Freezer = require('freezer-js'),
   _ = require('lodash'),
   path = require('path'),
-  search  = require('./helpers/search.js'),
-  keywords = require('./helpers/keywords.js'),
-
-// Filter dispatch (obj) by type (str) -> (Dispatch)
-dispatchIsType = function (type, dispatch) {
-  if (dispatch.type === type) return dispatch
-}
-
-// Filters dispatcher for dispatch (obj) of type -> (Dispatcher)
-wire = function (dispatcher, dispatchType) {
-  return dispatcher
-    .filter(function (d) { return dispatchIsType(dispatchType, d)})
-}
-
-// str, char -> str
-addCharToString = function (chr, str) { return str+chr }
+  search  = require('and-search'),
+  keywords = require('./helpers/keywords.js')
 
 // str -> str
 removeLastChar = function (val) {
   var len = val.length
-  if (len > 0) return val.substring(0,len-2)
+  if (len > 0) return val.substring(0,len-1)
   else return val
 }
 
@@ -40,7 +25,7 @@ showSearchResults = function (state) {
   var kwords = keywords(state.searchState.textboxValue)
   // search for notes if there are keywords
   if (kwords) {
-    var searchResults = search([], state.notesState.allNotes, kwords)
+    var searchResults = search(state.notesState.allNotes, kwords)
     state.notesState.set('displayedNotes', searchResults)
   // otherwise display all notes
   } else {
@@ -81,76 +66,77 @@ setup = function (dispatcher, notesDir) {
     }
   })
 
-  // Wire the dispatcher to side-effecty functions that update the state
-  // returns nothing
-  var on = function (dispatchType, fn) {
-    wire(dispatcher, dispatchType).onValue(function (d) { 
-      fn(d, store.get()) 
-    })
-  }
-
-  on('notesList', function (dispatch, state) {
-    var transaction = state.notesState.transact()
-    transaction.allNotes = dispatch.notes
-    transaction.displayedNotes = dispatch.notes
+  // set the notes every time a notesList event comes through
+  dispatcher.on('notesList', function (notesList) {
+    var state                  = store.get()
+    var transaction            = state.notesState.transact()
+    transaction.allNotes       = notesList
+    transaction.displayedNotes = notesList
     state.notesState.run()
     showSearchResults(store.get())
   })
 
-  // {type:'addToTextbox', val: 'j'} -> set textboxValue
-  on('addToTextbox', function (dispatch, state) {
-    var updatedVal = addCharToString(dispatch.ev, state.searchState.textboxValue)
-    state.searchState.set('textboxValue', updatedVal)
+  dispatcher.on('addToTextbox', function (character) {
+    var state         = store.get()
+    var txtboxVal     = state.searchState.textboxValue
+    state.searchState.set('textboxValue', txtboxVal + character)
   })
 
-  // {type:'clearTextbox'} -> clear textbox
-  on('clearTextbox', function (_, state) {
+  dispatcher.on('clearTextbox', function () {
+    var state         = store.get()
     state.searchState.set('textboxValue', '')
     state.selection.set(resetSelection())
   })
 
-  // {type:'backspaceTextbox'} -> remove last char from textbox
-  on('backspaceTextbox', function (_, state) {
-    var backspacedVal = removeLastChar(state.searchState.textboxValue) 
+  dispatcher.on('backspaceTextbox', function () {
+    var state         = store.get()
+    var txtboxVal     = state.searchState.textboxValue
+    var backspacedVal = removeLastChar(txtboxVal) 
     state.searchState.set('textboxValue', backspacedVal)
   })
 
-  on('scrollUp', function (_, state) {
-    var i = state.selection.selectionIndex
+  dispatcher.on('scrollUp', function () {
+    var state         = store.get()
+    var i             = state.selection.selectionIndex
     scroll(state, i > 0, -1)()
   })
 
-  on('scrollDown', function (_, state) {
-    var i = state.selection.selectionIndex
-    var displayedNotes = state.notesState.displayedNotes
-    scroll(state, i < displayedNotes.length, 1)()
+  dispatcher.on('scrollDown', function () {
+    var state         = store.get()
+    var i             = state.selection.selectionIndex
+    var displayed     = state.notesState.displayedNotes
+    var maxScroll     = displayed.length
+    scroll(state, i < maxScroll, 1)()
   })
 
-  on('openSelectedNote', function (_) {
-    var selectedNote = store.get().selection.selectionValue  
+  dispatcher.on('openSelectedNote', function (_) {
+    var selectedNote   = store.get().selection.selectionValue  
+    // if cursor's over the first item
     if (!selectedNote || selectedNote == 0) {
+      // make a new note out of that item
       var textboxValue = store.get().searchState.textboxValue
       var file = path.join(notesDir, textboxValue) 
+    // otherwise, 
     } else {
+      // get the path of the currently selected note
       var file = path.join(notesDir, selectedNote)
     }
-    //conf.launchEditor(file)
+    // finally, get the explorer to spawn vim on the file.
+    dispatcher.emit('spawnVim', file)
   })
 
-  // Make a stream of state updates
-  stateStream = Kefir.fromEvents(store, 'update')
-
-  // Update displayed notes whenever the text box's value changes
-  searchStateListener = store.get().searchState.getListener()
-  searchStateListener.on('update', function (_) {
+  // whenever the text box's value changes, for whatever reason,
+  // update the store
+  var l = store.get().searchState.getListener()
+  l.on('update', function () {
     var state = store.get()
     showSearchResults(state)
     // reset the selection
     state.selection.set(resetSelection())
-    
   })
 
-  return stateStream
+  // `store` is an emitter that emits an 'update' function every time a new state comes in
+  return store
 }
 
 module.exports = setup

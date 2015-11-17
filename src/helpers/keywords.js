@@ -1,3 +1,5 @@
+var _ = require('lodash')
+
 // str, str2, -> str/null
 keywords = function (str) {
   if (_.isString(str) && str.length > 0) {

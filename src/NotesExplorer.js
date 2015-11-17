@@ -1,55 +1,15 @@
 var blessed = require('blessed'),
   _ = require('lodash'),
-  ascii = require('ascii-codes')
+  ascii = require('ascii-codes'),
+  makeActions = require('./NotesActions')
 
 var ASCII_CHARS = ascii.symbolIndex
-ASCII_CHARS[0] = 'space' // hack 
-
-// register our actions here 
-var makeActions = function (bus) {
-
-  return {
-
-    addToTextbox: function (ev) {
-      bus.emit({
-        type: 'addToTextbox',
-        ev: ev
-      })
-    },
-
-    clearTextbox: function () {
-      bus.emit({
-        type: 'clearTextbox'
-      })
-    },
-
-    backspaceTextbox: function () {
-      bus.emit({
-        type: 'backspaceTextbox'
-      })
-    },
-
-    scrollUp: function () {
-      bus.emit({
-        type: 'scrollUp'
-      })
-    },
-
-    scrollDown: function () {
-      bus.emit({
-        type: 'scrollDown'
-      })
-    },
-
-    // open a note
-    openSelectedNote: function () {
-      bus.emit({
-        type: 'openSelectedNote',
-      })
-    },
-
-  }
-}
+// hack  -- add blessed's keywords for sapce
+ASCII_CHARS[0] = 'space' 
+// hack -- add blessed's keywords for uppercase letters
+var UPPER_CASE_ASCII = 'abcdefghijklmnopqrstuvwxyz'.split('').map(function (letter) {
+  return 'S-'+letter
+})
 
 // Create a screen object.
 var screen = blessed.screen({
@@ -87,6 +47,10 @@ var list = blessed.list({
   selectedBg: 'blue',
 });
 
+// append to screen - order seems to matter
+screen.append(list)
+screen.append(textbox)
+
 render = function (state) {
 
   var textboxVal = state.searchState.textboxValue 
@@ -115,31 +79,36 @@ render = function (state) {
 }
 
 
-setup = function (stateStream, dispatcher) {
+setup = function (store, dispatcher) {
 
   // get a  of functions that pushes actions to actionStream
   var actions = makeActions(dispatcher)
 
-  // append to screen - order seems to matter
-  screen.append(list)
-  screen.append(textbox)
-
+  // setup keybindings
   screen.key(['escape'], actions.clearTextbox)
   screen.key(['backspace'], actions.backspaceTextbox)
-  //scroll
   screen.key(['C-j', 'linefeed'], actions.scrollDown)
   screen.key(['C-k'], actions.scrollUp)
+  screen.key(['enter'], actions.openSelectedNote)
+  screen.key(['C-c'], function(ch, key) { return process.exit(0) })
   // we allow all ascii chars to be typed in textbox 
   screen.key(ASCII_CHARS, function (ev) { actions.addToTextbox(ev) })
-  //open notes
-  screen.key(['enter'], actions.openSelectedNote)
+  screen.key(UPPER_CASE_ASCII, function (ev) { actions.addToTextbox(ev) })
 
+  // whenever we get a state from the stateStream, render it
+  store.on('update', function (state) {
+    render(state)
+  })
 
-  // Quit on Control-C.
-  screen.key(['C-c'], function(ch, key) { return process.exit(0) })
-
-  // whenever we get a state from the stateStream,
-  stateStream.onValue(function (state) { render(state) })
+  // whenever we're told to spawn vim,
+  // we `screen.exec` vim on the file.
+  // `screen.exec` goes goes back to 
+  // our blessed session when we quit.
+  dispatcher.on('spawnVim', function (file) {
+    screen.exec('vim', [file], {}, function () {
+      dispatcher.emit('listFiles') // update files now, in case user just saved something
+    })
+  })
 }
 
 module.exports = setup
