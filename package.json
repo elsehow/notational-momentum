@@ -8,12 +8,15 @@
     "and-search": "^1.0.0",
     "ascii-codes": "^1.0.0",
     "blessed": "^0.1.61",
-    "freezer-js": "^0.5.2",
+    "kefir": "^3.1.0",
     "lodash": "^3.10.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "^4.2.2"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node test/test.js"
   },
   "repository": {
     "type": "git",

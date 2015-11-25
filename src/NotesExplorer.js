@@ -53,23 +53,21 @@ screen.append(textbox)
 
 render = function (state) {
 
-  var textboxVal = state.searchState.textboxValue 
-
   // update textbox state
-  textbox.setValue(textboxVal)
+  textbox.setValue(state.textboxVal)
 
   // update list with new notes
-  list.setItems(state.notesState.displayedNotes)
+  list.setItems(state.displayedNotes)
 
   // prepend an option to create a note
-  if (!textboxVal)
+  if (!state.textboxVal)
     list.insertItem(0, '..(open dir)..')
   else
-    list.insertItem(0, textboxVal)
+    list.insertItem(0, state.textboxVal)
 
   // select the first item
-  if (state.selection.selectionIndex)
-    list.select(state.selection.selectionIndex)
+  if (state.selectionIndex)
+    list.select(state.selectionIndex)
   else
     list.select(0)
 
