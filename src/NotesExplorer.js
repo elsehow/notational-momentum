@@ -53,27 +53,29 @@ screen.append(textbox)
 
 render = function (state) {
 
-  // update textbox state
-  textbox.setValue(state.textboxVal)
+  if (state.textboxVal && state.displayedNotes && state.selectionIndex) {
 
-  // update list with new notes
-  list.setItems(state.displayedNotes)
+    // update textbox state
+    textbox.setValue(state.textboxVal)
 
-  // prepend an option to create a note
-  if (!state.textboxVal)
-    list.insertItem(0, '..(open dir)..')
-  else
-    list.insertItem(0, state.textboxVal)
+    // update list with new notes
+    list.setItems(state.displayedNotes)
 
-  // select the first item
-  if (state.selectionIndex)
-    list.select(state.selectionIndex)
-  else
-    list.select(0)
+    // prepend an option to create a note
+    if (!state.textboxVal)
+      list.insertItem(0, '..(open dir)..')
+    else
+      list.insertItem(0, state.textboxVal)
 
+    // select the first item
+    if (state.selectionIndex !== 0)
+      list.select(state.selectionIndex)
+    else
+      list.select(0)
+
+  }
   // render the screen
   screen.render()
-
 }
 
 
@@ -94,9 +96,7 @@ setup = function (store, dispatcher) {
   screen.key(UPPER_CASE_ASCII, function (ev) { actions.addToTextbox(ev) })
 
   // whenever we get a state from the stateStream, render it
-  store.on('update', function (state) {
-    render(state)
-  })
+  store.onValue(render)
 
   // whenever we're told to spawn vim,
   // we `screen.exec` vim on the file.

@@ -2,17 +2,21 @@ var Kefir = require('kefir')
   path = require('path'),
   search  = require('and-search'),
   keywords = require('./helpers/keywords.js'),
-  _ = require('lodash')
+  _ = require('lodash'),
+  combineTemplate = require('./helpers/kefir-combineTemplate')
 
+function zero () { return 0 }
 function one () { return 1 }
 function minusOne () { return -1 }
 function sum (a,b) { return a+b }
 function emptyString (a,b) { return '' }
+function greaterThanZero (x) { return x > 0 }
 function concat (acc, cur) { return acc += cur }
 var backspaceKeyword = 'BKSP'
 var clearKeyword = 'CLR'
 function intoBackspaceKeyword () { return backspaceKeyword }
 function intoClearKeyword() { return clearKeyword }
+
 function concatTextbox (acc, cur) {
   if (cur === backspaceKeyword)
     return _.initial(acc).join('')
@@ -20,11 +24,7 @@ function concatTextbox (acc, cur) {
     return ''
   return concat(acc, cur)
 }
-function asKey (k) {
-  return function (v) {
-    return [k, v]
-  }
-}
+
 function searchIfNotes (notes, textboxVal) {
   var kwords = keywords(textboxVal)
   // search for notes if there are keywords
@@ -37,13 +37,7 @@ function searchIfNotes (notes, textboxVal) {
 
 function setup (dispatcher, notesDir) {
 
-  // our app state
-  var state = {}
-  // takes a values of the form [key, value]
-  function intoState (v) {
-    state[v[0]] = v[1]
-    return state
-  }
+
 
   function fullPath (filename) {
     return path.join(notesDir, filename)
@@ -52,8 +46,8 @@ function setup (dispatcher, notesDir) {
   var typedCharS        = Kefir.fromEvents(dispatcher, 'addToTextbox')
   var backspaceTextboxS = Kefir.fromEvents(dispatcher, 'backspaceTextbox').map(intoBackspaceKeyword)
   var clearTextboxS     = Kefir.fromEvents(dispatcher, 'clearTextbox').map(intoClearKeyword)
-  var scrollUpS         = Kefir.fromEvents(dispatcher, 'scrollUp').map(one)
-  var scrollDownS       = Kefir.fromEvents(dispatcher, 'scrollDown').map(minusOne)
+  var scrollUpS         = Kefir.fromEvents(dispatcher, 'scrollUp').map(minusOne)
+  var scrollDownS       = Kefir.fromEvents(dispatcher, 'scrollDown').map(one)
   var openSelectedNoteS = Kefir.fromEvents(dispatcher, 'openSelectedNote')
   var notesList         = Kefir.fromEvents(dispatcher, 'notesList')
 
@@ -63,33 +57,45 @@ function setup (dispatcher, notesDir) {
                             .scan(concatTextbox)
                             .toProperty(function () { return '' })
 
-  var scrollPos         = scrollUpS.combine(scrollDownS, sum)
-
   var displayedNotes    = notesList
                             .combine(textboxValue, searchIfNotes)
 
-// TODO
-// scroll up and down the list
+  // HACK
+  // we use this to refer to notesLength when scrolling :(
+  var notesLength = 0
+
+  var selectionIndex    = scrollUpS
+                            .merge(scrollDownS)
+                            .scan(function (acc, cur) {
+                              acc += cur
+                              if (acc < 0) 
+                                return 0
+                              if (acc > notesLength)
+                                return notesLength
+                              return acc
+                            }
+                            , 0)
+                            .toProperty(zero)
+
+  // update currently selected note when displayed notes are updated
+  selectionIndex = Kefir.combine([displayedNotes, selectionIndex], function (d, i) {
+    notesLength = d.length
+    if (i > notesLength) {
+      return notesLength
+    }
+    return i
+  })
+
 // select something
+// displayedNotes.combine(selectionIndex, function (n, i) { return n[i] }).onValue(emitter.emit...)
   
-//  state obj:
-//  we emit this to the renderer
-// 
-// {
-//   textboxVal
-//   displayedNotes
-//   selectionIndex
-// }
-
-  var stateStream = Kefir.merge([
-    textboxValue.map(asKey('textboxVal'))
-  , displayedNotes.map(asKey('displayedNotes'))
-  ]).map(intoState)
-                            
-                            
-
-
-  return stateStream
+// return a stream of objects
+// we emit this to the renderer
+  return combineTemplate({
+    textboxVal: textboxValue,
+    displayedNotes: displayedNotes,
+    selectionIndex: selectionIndex,
+  })
 
 }
 
