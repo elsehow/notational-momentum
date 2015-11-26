@@ -15,6 +15,15 @@ var fakeNotes = [
   'mighty casey has just struck trout'
 ]
 
+
+test('can take notes list', function (t) {
+  var ans = [
+    fakeNotes, 
+  ]
+  testStream(t, ans, stateS, 'displayedNotes')
+  dispatcher.emit('notesList', fakeNotes)
+})
+
 function testStream (t, answers, stream, prop) {
   stream = stream.map(_.property(prop)).skipDuplicates()
   var i = 0
@@ -59,15 +68,6 @@ test('clear textbox', function (t) {
   dispatcher.emit('clearTextbox')
 })
 
-test('can take notes list', function (t) {
-  var ans = [
-    undefined, 
-    fakeNotes, 
-  ]
-  testStream(t, ans, stateS, 'displayedNotes')
-  dispatcher.emit('notesList', fakeNotes)
-})
-
 test('can search for notes', function (t) {
   var ans = [
     fakeNotes,
@@ -95,11 +95,10 @@ test('can scroll up and down list', function (t) {
    2,
    3,
    4,
-   4,
-   4,
-   // 1,
-   // 1,
-   // 0,
+   5,
+   2,
+   1,
+   0,
   ]
   testStream(t, ans, stateS, 'selectionIndex')
   dispatcher.emit('addToTextbox', 'm') // makes it display only 2 notes
@@ -116,17 +115,18 @@ test('can scroll up and down list', function (t) {
   dispatcher.emit('scrollDown') // 2
   dispatcher.emit('scrollDown') // 3
   dispatcher.emit('scrollDown') // 4
+  dispatcher.emit('scrollDown') // 5
   dispatcher.emit('scrollDown') // we're at bottom! shouldn't scroll anymore. should see nothing.
-  dispatcher.emit('scrollDown') // we're at bottom! shouldn't scroll anymore. should see nothing.
-  // dispatcher.emit('addToTextbox', 'm') // makes it display only 2 notes - now we should see 1
-  // dispatcher.emit('scrollUp') // 0
-  // dispatcher.emit('scrollUp') // we're at top! shouldnt scroll anymore
-  // dispatcher.emit('scrollUp') // we're at top! shouldnt scroll anymore
-  // dispatcher.emit('scrollUp') // we're at top! shouldnt scroll anymore
+  dispatcher.emit('addToTextbox', 'm') // makes it display only 2 notes - now we should see 2
+  dispatcher.emit('scrollUp') // 1
+  dispatcher.emit('scrollUp') // 0
+  dispatcher.emit('scrollUp') // we're at top! shouldnt scroll anymore
 })
 
 
-test.skip('can `spawnVim on the selected file', function (t) {
+test('can `spawnVim on the selected file', function (t) {
+
+  t.plan(2)
 
   dispatcher.emit('clearTextbox')
 
@@ -136,8 +136,12 @@ test.skip('can `spawnVim on the selected file', function (t) {
   })
   dispatcher.emit('openSelectedNote')
 
+  dispatcher.emit('scrollDown') 
+
+  dispatcher.on('spawnVim', function (f) {
+    t.deepEquals(f, '/test/dir/things good and pending')
+    dispatcher.removeAllListeners('spawnVim')
+  })
+  dispatcher.emit('openSelectedNote')
+
 })
-
-
-
-

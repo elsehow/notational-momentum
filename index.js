@@ -25,6 +25,7 @@ function listFiles () {
 }
 // watch the directory
 setInterval(listFiles, 2000)
+// look the files up again, if anyone asks us to
 dispatcher.on('listFiles', listFiles)
 // do an initial fetch of files in the dir
 listFiles()

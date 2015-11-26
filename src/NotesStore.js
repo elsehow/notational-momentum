@@ -2,8 +2,7 @@ var Kefir = require('kefir')
   path = require('path'),
   search  = require('and-search'),
   keywords = require('./helpers/keywords.js'),
-  _ = require('lodash'),
-  combineTemplate = require('./helpers/kefir-combineTemplate')
+  _ = require('lodash')
 
 function zero () { return 0 }
 function one () { return 1 }
@@ -31,15 +30,13 @@ function searchIfNotes (notes, textboxVal) {
   if (kwords) {
     var res = search(notes, kwords)
     return res
-}
+  }
   return notes
 }
 
 function setup (dispatcher, notesDir) {
 
-
-
-  function fullPath (filename) {
+  function pathTo (filename) {
     return path.join(notesDir, filename)
   }
 
@@ -62,7 +59,7 @@ function setup (dispatcher, notesDir) {
 
   // HACK
   // we use this to refer to notesLength when scrolling :(
-  var notesLength = 0
+  var notesLength       = 0
 
   var selectionIndex    = scrollUpS
                             .merge(scrollDownS)
@@ -86,15 +83,23 @@ function setup (dispatcher, notesDir) {
     return i
   })
 
-// select something
-// displayedNotes.combine(selectionIndex, function (n, i) { return n[i] }).onValue(emitter.emit...)
+  // side-effects: select something
+  // TODO -- if the index is 0, should open textbox value OR a blank note.
+  displayedNotes
+    .combine(selectionIndex, function (n, i) { return n[i] })
+    .sampledBy(openSelectedNoteS)
+    .onValue(function (note) {
+      dispatcher.emit('spawnVim', pathTo(note))
+    })
   
 // return a stream of objects
 // we emit this to the renderer
-  return combineTemplate({
-    textboxVal: textboxValue,
-    displayedNotes: displayedNotes,
-    selectionIndex: selectionIndex,
+  return Kefir.combine([textboxValue, displayedNotes, selectionIndex], function (t, d, i) {
+    return {
+      textboxVal: t,
+      displayedNotes: d,
+      selectionIndex: i,
+    }
   })
 
 }

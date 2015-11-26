@@ -53,8 +53,6 @@ screen.append(textbox)
 
 render = function (state) {
 
-  if (state.textboxVal && state.displayedNotes && state.selectionIndex) {
-
     // update textbox state
     textbox.setValue(state.textboxVal)
 
@@ -73,7 +71,6 @@ render = function (state) {
     else
       list.select(0)
 
-  }
   // render the screen
   screen.render()
 }
