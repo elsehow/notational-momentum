@@ -126,18 +126,33 @@ test('can scroll up and down list', function (t) {
 
 test('can `spawnVim on the selected file', function (t) {
 
-  t.plan(2)
+  t.plan(3)
 
   dispatcher.emit('clearTextbox')
+  dispatcher.emit('addToTextbox', 't')
 
+  // on the first one, should open the textbox value 
+  // (would be 't' here)
+  dispatcher.on('spawnVim', function (f) {
+    t.deepEquals(f, '/test/dir/t')
+    dispatcher.removeAllListeners('spawnVim')
+  })
+  dispatcher.emit('openSelectedNote')
+
+
+  // now clear the textbox, 
+  // scroll down one
+  // see if we open the first note
+  dispatcher.emit('clearTextbox')
+  dispatcher.emit('scrollDown') 
   dispatcher.on('spawnVim', function (f) {
     t.deepEquals(f, '/test/dir/very cool note')
     dispatcher.removeAllListeners('spawnVim')
   })
   dispatcher.emit('openSelectedNote')
 
+  // now the second note
   dispatcher.emit('scrollDown') 
-
   dispatcher.on('spawnVim', function (f) {
     t.deepEquals(f, '/test/dir/things good and pending')
     dispatcher.removeAllListeners('spawnVim')

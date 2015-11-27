@@ -84,9 +84,15 @@ function setup (dispatcher, notesDir) {
   })
 
   // side-effects: select something
-  // TODO -- if the index is 0, should open textbox value OR a blank note.
-  displayedNotes
-    .combine(selectionIndex, function (n, i) { return n[i] })
+  // TODO -- 
+  Kefir 
+    .combine([displayedNotes, selectionIndex, textboxValue], function (n, i, t) { 
+      // if the index is 0
+      // should open textbox value OR a blank note.
+      if (i == 0)
+        return t
+      return n[i-1] 
+    })
     .sampledBy(openSelectedNoteS)
     .onValue(function (note) {
       dispatcher.emit('spawnVim', pathTo(note))
