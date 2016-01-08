@@ -4,6 +4,8 @@ var Kefir = require('kefir')
   keywords = require('./helpers/keywords.js'),
   _ = require('lodash')
 
+var backspaceKeyword = 'BKSP'
+var clearKeyword = 'CLR'
 function zero () { return 0 }
 function one () { return 1 }
 function minusOne () { return -1 }
@@ -11,8 +13,6 @@ function sum (a,b) { return a+b }
 function emptyString (a,b) { return '' }
 function greaterThanZero (x) { return x > 0 }
 function concat (acc, cur) { return acc += cur }
-var backspaceKeyword = 'BKSP'
-var clearKeyword = 'CLR'
 function intoBackspaceKeyword () { return backspaceKeyword }
 function intoClearKeyword() { return clearKeyword }
 
@@ -95,7 +95,7 @@ function setup (dispatcher, notesDir) {
     })
     .sampledBy(openSelectedNoteS)
     .onValue(function (note) {
-      dispatcher.emit('spawnVim', pathTo(note))
+      dispatcher.emit('launchCommand', pathTo(note))
     })
   
 // return a stream of objects

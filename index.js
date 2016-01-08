@@ -6,9 +6,19 @@ var _ = require('lodash'),
   NotesStore = require ('./src/NotesStore.js'),
   NotesExplorer = require('./src/NotesExplorer.js'),
   listNotes = require('./src/helpers/listNotes.js'),
-  // get the notes dir from command line args
-  notesDir = process.argv.slice(2)[0]
-  notesDir = (_.last(notesDir) === '/') ? notesDir : notesDir + '/'
+  argv = require('minimist')(process.argv.slice(2))
+
+// the notes dir is from command line argument -d
+// - or, it's the current directory.
+var notesDir = argv.d ? argv.d : __dirname
+// add trailing slash to directory, if there is none (just to be safe on *nix)
+notesDir = (_.last(notesDir) === '/') ? notesDir : notesDir + '/'
+// get the notetaker command from argument -p
+// - or, vim, if there is none
+var launchCommand = argv.p ? argv.p : 'vim'
+
+console.log('launching', notesDir, launchCommand, argv)
+
 
 var dispatcher = new EventEmitter()
 // NotesStore returns a stream of application states
@@ -16,7 +26,7 @@ var dispatcher = new EventEmitter()
 var store = NotesStore(dispatcher, notesDir)
 // NotesExplorer draws the state ot he DOM
 // and pushes messages to dispatcher
-NotesExplorer(store, dispatcher)
+NotesExplorer(store, dispatcher, launchCommand)
 
 function listFiles () {
   listNotes(notesDir, function (notes) {

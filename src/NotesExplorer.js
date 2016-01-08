@@ -76,7 +76,7 @@ render = function (state) {
 }
 
 
-setup = function (store, dispatcher) {
+setup = function (store, dispatcher, cmd) {
 
   // get a  of functions that pushes actions to actionStream
   var actions = makeActions(dispatcher)
@@ -99,8 +99,8 @@ setup = function (store, dispatcher) {
   // we `screen.exec` vim on the file.
   // `screen.exec` goes goes back to 
   // our blessed session when we quit.
-  dispatcher.on('spawnVim', function (file) {
-    screen.exec('vim', [file], {}, function () {
+  dispatcher.on('launchCommand', function (file) {
+    screen.exec(cmd, [file], {}, function () {
       dispatcher.emit('listFiles') // update files now, in case user just saved something
     })
   })
