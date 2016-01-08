@@ -1,6 +1,7 @@
 var Kefir = require('kefir')
   path = require('path'),
   search  = require('and-search'),
+  exec = require('child_process').exec,
   keywords = require('./helpers/keywords.js'),
   _ = require('lodash')
 
@@ -46,14 +47,17 @@ function setup (dispatcher, notesDir) {
   var scrollUpS         = Kefir.fromEvents(dispatcher, 'scrollUp').map(minusOne)
   var scrollDownS       = Kefir.fromEvents(dispatcher, 'scrollDown').map(one)
   var openSelectedNoteS = Kefir.fromEvents(dispatcher, 'openSelectedNote')
+  var delSelectedNoteS  = Kefir.fromEvents(dispatcher, 'deleteSelectedNote')
   var notesList         = Kefir.fromEvents(dispatcher, 'notesList')
 
+  // compute textbox value
   var textboxValue      = typedCharS
                             .merge(backspaceTextboxS)
                             .merge(clearTextboxS)
                             .scan(concatTextbox)
                             .toProperty(function () { return '' })
 
+  // compute displayed notes
   var displayedNotes    = notesList
                             .combine(textboxValue, searchIfNotes)
 
@@ -61,6 +65,7 @@ function setup (dispatcher, notesDir) {
   // we use this to refer to notesLength when scrolling :(
   var notesLength       = 0
 
+  // compute index of selected note
   var selectionIndex    = scrollUpS
                             .merge(scrollDownS)
                             .scan(function (acc, cur) {
@@ -83,9 +88,8 @@ function setup (dispatcher, notesDir) {
     return i
   })
 
-  // side-effects: select something
-  // TODO -- 
-  Kefir 
+  // compute path to currnetly selected note
+  var currentlySelectedNote = Kefir 
     .combine([displayedNotes, selectionIndex, textboxValue], function (n, i, t) { 
       // if the index is 0
       // should open textbox value OR a blank note.
@@ -93,9 +97,24 @@ function setup (dispatcher, notesDir) {
         return t
       return n[i-1] 
     })
+
+  // send command to open files
+  currentlySelectedNote
     .sampledBy(openSelectedNoteS)
     .onValue(function (note) {
       dispatcher.emit('launchCommand', pathTo(note))
+    })
+
+  // send command to delete files
+  currentlySelectedNote
+    .sampledBy(delSelectedNoteS)
+    .onValue(function (note) {
+        var p = pathTo(note)
+        exec('rm ' + p, (err) => {
+            if (err) console.log(err) 
+            // update files now, in case user just saved something
+            dispatcher.emit('listFiles')
+        })
     })
   
 // return a stream of objects

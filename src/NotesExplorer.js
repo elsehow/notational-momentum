@@ -87,6 +87,7 @@ setup = function (store, dispatcher, cmd) {
   screen.key(['C-j', 'linefeed'], actions.scrollDown)
   screen.key(['C-k'], actions.scrollUp)
   screen.key(['enter'], actions.openSelectedNote)
+  screen.key(['C-r'], actions.deleteSelectedNote)
   screen.key(['C-c'], function(ch, key) { return process.exit(0) })
   // we allow all ascii chars to be typed in textbox 
   screen.key(ASCII_CHARS, function (ev) { actions.addToTextbox(ev) })

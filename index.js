@@ -17,9 +17,6 @@ notesDir = (_.last(notesDir) === '/') ? notesDir : notesDir + '/'
 // - or, vim, if there is none
 var launchCommand = argv.p ? argv.p : 'vim'
 
-console.log('launching', notesDir, launchCommand, argv)
-
-
 var dispatcher = new EventEmitter()
 // NotesStore returns a stream of application states
 // It updates the state based on messages in dispatcher

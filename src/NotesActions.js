@@ -23,9 +23,12 @@ var makeActions = function (emitter) {
       emitter.emit('scrollDown')
     },
 
-    // open a note
     openSelectedNote: function () {
       emitter.emit('openSelectedNote')
+    },
+
+    deleteSelectedNote: function () {
+      emitter.emit('deleteSelectedNote')
     },
 
   }
